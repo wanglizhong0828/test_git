@@ -1,0 +1,21 @@
+{
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.autopep8",
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    },
+    "editor.formatOnSave": true
+  },
+  "autopep8.args": [
+    "--aggressive",
+    "--ignore=E402",
+    "--exclude=.git,__pycache__,.venv,build,dist",
+    "--ignore-local-config"
+  ],
+  "isort.args": ["--profile", "autopep8"],
+  "pylint.importStrategy": "useBundled",
+  "pylint.args": [
+    "--disable=invalid-name,missing-module-docstring",
+    "--disable=W0612,W0631,W0703,W0621,W0613,W0611,W1308,C0411,C0111,C0103,C0301,C0304,C0305,E1101,R0913,R0914,R0915,R0903,W3101"
+  ]
+}
