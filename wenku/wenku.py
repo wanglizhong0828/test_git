@@ -9,7 +9,6 @@ headers = {
     "user-agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/"
                    "537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/"
                    "537.36"),
-    "host": "wenku.baidu.com",
 }
 
 wenku_view_url = "https://wenku.baidu.com/view/"
@@ -53,8 +52,8 @@ def get_page_date(url: str, query_info: dict) -> dict | BaseException:
         return error
 
 
-def get_read_info(document_url: str, doc_id: str,
-                  reader_info: dict, query_info: dict):
+def get_reader_info(url: str, doc_id: str, init_reader_info: dict,
+                    query_info: dict) -> dict | BaseException:
     url = "https://wenku.baidu.com/ndocview/readerinfo"
     # 1 表示来自百度搜索 0表示其他
     is_from_bd_search = random.randint(0, 1)
@@ -63,7 +62,7 @@ def get_read_info(document_url: str, doc_id: str,
         "docId": doc_id,
         "type": "html",
         "clientType": 1,
-        "pn": reader_info["showPage"] + 1,
+        "pn": init_reader_info["showPage"] + 1,
         "t": int(time.time() * 1000),
         # /(www|m)\.baidu\.com/.test(document.referrer) ? 1 : 0
         "isFromBdSearch": is_from_bd_search,
@@ -81,8 +80,20 @@ def get_read_info(document_url: str, doc_id: str,
     if wk_query:
         params["wkQuery"] = wk_query[0]
     response = requests.get(
-        url, params=params, headers={
-            "referer": document_url, **headers})
+        url="https://wenku.baidu.com/ndocview/readerinfo", params=params,
+        headers={"referer": url, "host": "wenku.baidu.com", **headers})
+    try:
+        reader_info = json.loads(response.text)
+        return reader_info
+    except BaseException as error:
+        return error
+
+
+def get_page_data(url: str, page_load_url: str):
+    response = requests.get(page_load_url, headers={
+        "referer": url,
+        "origin": "https://wenku.baidu.com"
+    })
     return response.text
 
 
@@ -95,10 +106,23 @@ def get_document_data(url: str):
     if isinstance(page_data, BaseException):
         print(f"获取页面数据错误, message: {str(page_data)}")
         return
+    init_reader_info = page_data["readerInfo"]
+    more_reader_info = get_reader_info(
+        url, doc_id, init_reader_info, query_info)
+    if isinstance(more_reader_info, BaseException):
+        print(f"获取更多页失败, message: {str(more_reader_info)}")
+        return
+    html_urls = [*init_reader_info["htmlUrls"]["json"],
+                 *more_reader_info["data"]["htmlUrls"]["json"]]
+    print(html_urls)
 
 
 def main():
-    pass
+    get_document_data(("https://wenku.baidu.com/view/"
+                       "583639033269a45177232f60ddccda38376be1c0.html"
+                       "?fr=income1-doc-search&_wkts_=1724292524908&"
+                       "wkQuery=%E7%A7%AF%E6%9E%81%E5%88%86%E5%AD%90&"
+                       "needWelcomeRecommand=1"))
 
 
 if __name__ == "__main__":
